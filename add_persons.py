@@ -1,25 +1,23 @@
 import argparse
 import os
 import shutil
-
 import cv2
 import numpy as np
 import torch
 from torchvision import transforms
-
 from face_detection.scrfd.detector import SCRFD
 from face_detection.yolov5_face.detector import Yolov5Face
 from face_recognition.arcface.model import iresnet_inference
 from face_recognition.arcface.utils import read_features
 
-# Check if CUDA is available and set the device accordingly
+# Kiểm tra xem CUDA có sẵn không và đặt thiết bị phù hợp
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Initialize the face detector (Choose one of the detectors)
+# Khởi tạo bộ phát hiện khuôn mặt (Chọn một trong các bộ phát hiện)
 # detector = Yolov5Face(model_file="face_detection/yolov5_face/weights/yolov5n-face.pt")
 detector = SCRFD(model_file="face_detection/scrfd/weights/scrfd_2.5g_bnkps.onnx")
 
-# Initialize the face recognizer
+# Khởi tạo bộ nhận diện khuôn mặt
 recognizer = iresnet_inference(
     model_name="r100", path="face_recognition/arcface/weights/arcface_r100.pth", device=device
 )
@@ -36,7 +34,7 @@ def get_feature(face_image):
     Returns:
         numpy.ndarray: Extracted facial features.
     """
-    # Define a series of image preprocessing steps
+    # Định nghĩa các bước tiền xử lý ảnh
     face_preprocess = transforms.Compose(
         [
             transforms.ToTensor(),
@@ -45,13 +43,13 @@ def get_feature(face_image):
         ]
     )
 
-    # Convert the image to RGB format
+    # Chuyển đổi ảnh sang định dạng RGB
     face_image = cv2.cvtColor(face_image, cv2.COLOR_BGR2RGB)
 
-    # Apply the defined preprocessing to the image
+    # Áp dụng các bước tiền xử lý lên ảnh
     face_image = face_preprocess(face_image).unsqueeze(0).to(device)
 
-    # Use the model to obtain facial features
+    # Sử dụng mô hình để trích xuất đặc trưng khuôn mặt
     emb_img_face = recognizer(face_image)[0].cpu().numpy()
 
     # Normalize the features
@@ -69,15 +67,15 @@ def add_persons(backup_dir, add_persons_dir, faces_save_dir, features_path):
         faces_save_dir (str): Directory to save the extracted faces.
         features_path (str): Path to save face features.
     """
-    # Initialize lists to store names and features of added images
+    # Khởi tạo danh sách để lưu tên và đặc trưng của các ảnh đã thêm
     images_name = []
     images_emb = []
 
-    # Read the folder with images of the new person, extract faces, and save them
+    # Đọc thư mục chứa ảnh của người mới, phát hiện khuôn mặt, và lưu lại
     for name_person in os.listdir(add_persons_dir):
         person_image_path = os.path.join(add_persons_dir, name_person)
 
-        # Create a directory to save the faces of the person
+        # Tạo thư mục để lưu khuôn mặt của từng người
         person_face_path = os.path.join(faces_save_dir, name_person)
         os.makedirs(person_face_path, exist_ok=True)
 
@@ -85,73 +83,73 @@ def add_persons(backup_dir, add_persons_dir, faces_save_dir, features_path):
             if image_name.endswith(("png", "jpg", "jpeg")):
                 input_image = cv2.imread(os.path.join(person_image_path, image_name))
 
-                # Detect faces and landmarks using the face detector
+                # Phát hiện khuôn mặt và các điểm đặc trưng sử dụng bộ phát hiệ
                 bboxes, landmarks = detector.detect(image=input_image)
 
-                # Extract faces
+                # Trích xuất khuôn mặt
                 for i in range(len(bboxes)):
-                    # Get the number of files in the person's path
+                    # Lấy số lượng file hiện có trong thư mục của người đó
                     number_files = len(os.listdir(person_face_path))
 
-                    # Get the location of the face
+                    # Lấy tọa độ khuôn mặt
                     x1, y1, x2, y2, score = bboxes[i]
 
-                    # Ensure the face region is valid
+                    # Đảm bảo vùng khuôn mặt hợp lệ
                     if x1 < x2 and y1 < y2:
-                        # Extract the face from the image
+                        # Cắt khuôn mặt từ ảnh
                         face_image = input_image[y1:y2, x1:x2]
 
-                        # Check if face_image is valid and not empty
+                        # Kiểm tra xem ảnh khuôn mặt có hợp lệ không
                         if face_image.size > 0:
-                            # Path to save the face
+                            # Đường dẫn lưu khuôn mặt
                             path_save_face = os.path.join(person_face_path, f"{number_files}.jpg")
 
-                            # Save the face to the database
+                            # Lưu khuôn mặt vào cơ sở dữ liệu
                             cv2.imwrite(path_save_face, face_image)
 
-                            # Extract features from the face
+                            # Trích xuất đặc trưng từ khuôn mặt
                             images_emb.append(get_feature(face_image=face_image))
                             images_name.append(name_person)
                         else:
-                            print(f"Warning: Empty face region detected in {image_name}")
+                            print(f"Cảnh báo: Khuôn mặt rỗng trong {image_name}")
                     else:
-                        print(f"Warning: Invalid bounding box detected in {image_name}")
+                        print(f"Cảnh báo: Tọa độ không hợp lệ trong {image_name}")
 
-    # Check if no new person is found
+    # Kiểm tra nếu không có người mới
     if images_emb == [] and images_name == []:
-        print("No new person found!")
+        print("Không tìm thấy người mới!")
         return None
 
-    # Convert lists to arrays
+    # Chuyển đổi danh sách thành mảng
     images_emb = np.array(images_emb)
     images_name = np.array(images_name)
 
-    # Read existing features if available
+    # Đọc đặc trưng hiện có nếu có
     features = read_features(features_path)
 
     if features is not None:
-        # Unpack existing features
+        # Giải nén đặc trưng hiện có
         old_images_name, old_images_emb = features
 
-        # Combine new features with existing features
+        # Gộp đặc trưng mới với đặc trưng cũ
         images_name = np.hstack((old_images_name, images_name))
         images_emb = np.vstack((old_images_emb, images_emb))
 
-        print("Update features!")
+        print("Cập nhật đặc trưng!")
 
-    # Save the combined features
+        # Lưu đặc trưng đã gộp
     np.savez_compressed(features_path, images_name=images_name, images_emb=images_emb)
 
-    # Move the data of the new person to the backup data directory
+    # Di chuyển dữ liệu của người mới vào thư mục sao lưu
     for sub_dir in os.listdir(add_persons_dir):
         dir_to_move = os.path.join(add_persons_dir, sub_dir)
         shutil.move(dir_to_move, backup_dir, copy_function=shutil.copytree)
 
-    print("Successfully added new person!")
+    print("Thêm người mới thành công!")
 
 
 if __name__ == "__main__":
-    # Parse command line arguments
+    # Phân tích các tham số dòng lệnh
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--backup-dir",

@@ -1,57 +1,55 @@
 import time
-
 import cv2
-
 from face_alignment.alignment import norm_crop
 from face_detection.scrfd.detector import SCRFD
 from face_detection.yolov5_face.detector import Yolov5Face
 
-# Initialize the face detector
+# Khởi tạo bộ phát hiện khuôn mặt
 # detector = Yolov5Face(model_file="face_detection/yolov5_face/weights/yolov5n-0.5.pt")
 detector = SCRFD(model_file="face_detection/scrfd/weights/scrfd_2.5g_bnkps.onnx")
 
 
 def main():
-    # Open the camera
+    # Mở camera
     cap = cv2.VideoCapture(0)
 
-    # Initialize variables for measuring frame rate
+    # Khởi tạo các biến để đo tốc độ khung hình
     start = time.time_ns()
     frame_count = 0
     fps = -1
 
-    # Save video
+    # Lưu video
     frame_width = int(cap.get(3))
     frame_height = int(cap.get(4))
     size = (frame_width, frame_height)
     video = cv2.VideoWriter("results/face-detection.mp4", cv2.VideoWriter_fourcc(*"mp4v"), 30, size)
 
-    # Read frames from the camera
+    # Đọc các khung hình từ camera
     while True:
-        # Capture a frame from the camera
+        # Chụp một khung hình từ camera
         _, frame = cap.read()
 
-        # Get faces and landmarks using the face detector
+        # Lấy các khuôn mặt và các điểm đặc trưng từ bộ phát hiện khuôn mặt
         bboxes, landmarks = detector.detect(image=frame)
         h, w, c = frame.shape
 
-        tl = 1 or round(0.002 * (h + w) / 2) + 1  # Line and font thickness
-        clors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 255, 255)]
+        tl = 1 or round(0.002 * (h + w) / 2) + 1  # Độ dày đường viền và phông chữ
+        clors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0, 255, 255)]  # Màu sắc cho các điểm đặc trưng
 
-        # Draw bounding boxes and landmarks on the frame
+        # Vẽ các hộp giới hạn và điểm đặc trưng lên khung hình
         for i in range(len(bboxes)):
-            # Get location of the face
+            # Lấy vị trí của khuôn mặt
             x1, y1, x2, y2, score = bboxes[i]
-            face = frame[y1:y2, x1:x2]
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 146, 230), 2)
+            face = frame[y1:y2, x1:x2]  # Cắt phần khuôn mặt từ khung hình
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 146, 230), 2)  # Vẽ hộp giới hạn khuôn mặt
 
-            # Draw facial landmarks
+            # Vẽ các điểm đặc trưng trên khuôn mặt
             for id, key_point in enumerate(landmarks[i]):
-                cv2.circle(frame, tuple(key_point), tl + 1, clors[id], -1)
+                cv2.circle(frame, tuple(key_point), tl + 1, clors[id], -1)  # Vẽ các điểm đặc trưng
 
-            align = norm_crop(frame, landmarks[i])
+            align = norm_crop(frame, landmarks[i])  # Cắt và căn chỉnh khuôn mặt
 
-        # Calculate and display the frame rate
+        # Tính toán và hiển thị tốc độ khung hình
         frame_count += 1
         if frame_count >= 30:
             end = time.time_ns()
@@ -61,20 +59,20 @@ def main():
 
         if fps > 0:
             fps_label = "FPS: %.2f" % fps
-            cv2.putText(frame, fps_label, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            cv2.putText(frame, fps_label, (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)  # Hiển thị FPS
 
-        # Save the frame to the video
+        # Lưu khung hình vào video
         video.write(frame)
 
-        # Show the result in a window
-        cv2.imshow("Face Detection", frame)
-        cv2.imshow("Face align", align)
+        # Hiển thị kết quả trong cửa sổ
+        cv2.imshow("Face Detection", frame)  # Hiển thị khung hình với phát hiện khuôn mặt
+        cv2.imshow("Face align", align)  # Hiển thị khuôn mặt đã căn chỉnh
 
-        # Press 'Q' on the keyboard to exit
+        # Nhấn 'Q' trên bàn phím để thoát
         if cv2.waitKey(25) & 0xFF == ord("q"):
             break
 
-    # Release video and camera, and close all OpenCV windows
+    # Giải phóng video và camera, và đóng tất cả cửa sổ OpenCV
     video.release()
     cap.release()
     cv2.destroyAllWindows()

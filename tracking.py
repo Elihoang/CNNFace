@@ -9,7 +9,7 @@ from face_tracking.tracker.byte_tracker import BYTETracker
 from face_tracking.tracker.visualize import plot_tracking
 
 
-# Function to load a YAML configuration file
+# Hàm tải tệp cấu hình YAML
 def load_config(file_name):
     with open(file_name, "r") as stream:
         try:
@@ -18,26 +18,26 @@ def load_config(file_name):
             print(exc)
 
 
-# Function for performing object detection and tracking
+# Hàm thực hiện phát hiện và theo dõi đối tượng
 def inference(detector, args):
-    # Open a video capture object
+    # Mở đối tượng video capture
     cap = cv2.VideoCapture(0)
 
-    # Initialize variables for measuring frame rate
+    # Khởi tạo các biến để đo tốc độ khung hình
     start_time = time.time_ns()
     frame_count = 0
     fps = -1
 
-    # Initialize a tracker and a timer
+    # Khởi tạo bộ theo dõi và bộ đếm thời gian
     tracker = BYTETracker(args=args, frame_rate=30)
     frame_id = 0
 
     while True:
-        # Read a frame from the video capture
+        # Đọc một khung hình từ video capture
         ret_val, frame = cap.read()
 
         if ret_val:
-            # Perform face detection and tracking on the frame
+            # Thực hiện phát hiện và theo dõi khuôn mặt trên khung hình
             outputs, img_info, bboxes, landmarks = detector.detect_tracking(image=frame)
 
             if outputs is not None:
@@ -67,22 +67,22 @@ def inference(detector, args):
             else:
                 online_im = img_info["raw_img"]
 
-            # Calculate and display the frame rate
+            # Tính toán và hiển thị tốc độ khung hình
             frame_count += 1
             if frame_count >= 30:
                 fps = 1e9 * frame_count / (time.time_ns() - start_time)
                 frame_count = 0
                 start_time = time.time_ns()
 
-            # # Draw bounding boxes and landmarks on the frame
+            # Vẽ hộp giới hạn và các điểm mốc trên khung hình
             # for i in range(len(bboxes)):
-            #     # Get location of the face
+            #     # Lấy vị trí của khuôn mặt
             #     x1, y1, x2, y2, score = bboxes[i]
             #     cv2.rectangle(online_im, (x1, y1), (x2, y2), (200, 200, 230), 2)
 
             cv2.imshow("Face Tracking", online_im)
 
-            # Check for user exit input
+            # Kiểm tra đầu vào thoát của người dùng
             ch = cv2.waitKey(1)
             if ch == 27 or ch == ord("q") or ch == ord("Q"):
                 break

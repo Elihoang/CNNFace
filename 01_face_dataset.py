@@ -9,10 +9,10 @@ cam = cv2.VideoCapture(0)
 face_detector = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 # Lấy thông tin người dùng
-face_id = input('\n Make sure the first user entered is 0. Enter user id and press <return> ==>  ')
-face_name = input(f'\n Give the name for {face_id} <return> ==>  ')
+face_id = input('\n Đảm bảo người dùng đầu tiên nhập vào là 0. Nhập mã số người dùng và nhấn <return> ==>  ')
+face_name = input(f'\n Nhập tên cho {face_id} <return> ==>  ')
 
-print("\n [INFO] Initializing face capture. Look at the camera and wait ...")
+print("\n [THÔNG TIN] Đang khởi tạo chụp khuôn mặt. Nhìn vào camera và chờ đợi ...")
 count = 0
 
 # Tạo thư mục dataset nếu chưa có
@@ -50,10 +50,10 @@ while True:
                 path_save_face = os.path.join(user_dir, f"User.{face_id}.{count}.jpg")
                 cv2.imwrite(path_save_face, face_image)
             except Exception as e:
-                print(f"Error saving face image: {e}")
+                print(f"Lỗi khi lưu ảnh khuôn mặt: {e}")
                 continue
         else:
-            print(f"Warning: Empty face region detected at index {count}")
+            print(f"Cảnh báo: Vùng khuôn mặt rỗng được phát hiện tại chỉ số {count}")
 
         # Tính toán FPS và hiển thị lên ảnh
         frame_count += 1
@@ -65,7 +65,7 @@ while True:
             start_time = time.time()
 
         cv2.putText(img, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        cv2.putText(img, f"Img Captured: {count}", (img.shape[1] - 300, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(img, f"anh da chup: {count}", (img.shape[1] - 300, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         cv2.imshow('image', img)
         count += 1
@@ -78,6 +78,6 @@ while True:
         break
 
 # Dọn dẹp và thoát chương trình
-print("\n [INFO] Exiting Program and cleanup stuff")
+print("\n [THÔNG TIN] Đang thoát chương trình và dọn dẹp")
 cam.release()
 cv2.destroyAllWindows()
