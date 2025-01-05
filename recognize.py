@@ -214,7 +214,7 @@ def recognize():
                     break
 
         if tracking_bboxes == []:
-            print("Đang chờ người...")
+            print("Đang nhận diện người...")
 
 def main():
     """Hàm chính để khởi động các luồng theo dõi và nhận diện khuôn mặt."""
