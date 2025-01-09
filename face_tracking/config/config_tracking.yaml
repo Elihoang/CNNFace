@@ -1,5 +1,5 @@
 device: cpu
-fps: 30
+fps: 60
 match_thresh: 0.8
 min_box_area: 10
 save_result: True
